@@ -11,7 +11,8 @@
       "supportsTablet": true
     },
     "android": {
-      "package": "com.gustavonunes.techcampusiot"
+      "package": "com.gustavonunes.techcampusiot",
+      "usesCleartextTraffic": true
     },
     "web": {
       "bundler": "metro"
