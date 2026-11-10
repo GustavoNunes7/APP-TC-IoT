@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   View,
   Text,
@@ -14,11 +14,12 @@ import colors from "../constants/colors";
 export default function HomeScreen() {
   const [token, setToken] = useState("");
   const [focused, setFocused] = useState(false);
+  const tokenInputRef = useRef(null);
 
   function handleValidateToken() {
     const tokenLimpo = token.trim();
 
-    if (!/^\d{6}$/.test(tokenLimpo)) {
+    if (!/^\\d{6}$/.test(tokenLimpo)) {
       alert("Digite o token numérico de 6 dígitos.");
       return;
     }
@@ -29,54 +30,77 @@ export default function HomeScreen() {
     });
   }
 
+  function handleTokenChange(value) {
+    setToken(value.replace(/\\D/g, "").slice(0, 6));
+  }
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <View style={styles.content}>
-        <View style={styles.logoContainer}>
-          <View style={styles.logo}>
-            <Text style={styles.logoText}>TC</Text>
-          </View>
+        {/* Identidade visual e instruções no topo */}
+        <View style={styles.header}>
           <Text style={styles.brandName}>TechCampus</Text>
           <Text style={styles.brandSubtitle}>
             SISTEMA DE RETIRADA INTELIGENTE
           </Text>
+          <View style={styles.headerDivider} />
+          <Text style={styles.stepText}>ETAPA 2 DE 2</Text>
         </View>
 
         <View style={styles.welcomeContainer}>
-          <Text style={styles.welcomeTitle}>Olá, aluno!</Text>
+          <Text style={styles.welcomeTitle}>Token de retirada</Text>
           <Text style={styles.description}>
-            Insira seu token de retirada para acessar o sistema de liberação.
+            Digite o código de 6 números para liberar a retirada do seu item.
           </Text>
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.label}>TOKEN DE RETIRADA</Text>
+        {/* Seis quadrados visuais ligados a um único campo numérico */}
+        <TouchableOpacity
+          activeOpacity={1}
+          style={styles.tokenArea}
+          onPress={() => tokenInputRef.current?.focus()}
+        >
+          <View style={styles.tokenBoxes}>
+            {Array.from({ length: 6 }).map((_, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.tokenBox,
+                  focused && index === token.length && styles.tokenBoxActive,
+                ]}
+              >
+                <Text style={styles.tokenDigit}>
+                  {token[index] || ""}
+                </Text>
+              </View>
+            ))}
+          </View>
 
           <TextInput
-            style={[styles.input, focused && styles.inputFocused]}
-            placeholder="Digite os 6 números"
-            placeholderTextColor={colors.placeholder}
+            ref={tokenInputRef}
             value={token}
-            onChangeText={(value) => setToken(value.replace(/\D/g, "").slice(0, 6))}
+            onChangeText={handleTokenChange}
             onFocus={() => setFocused(true)}
             onBlur={() => setFocused(false)}
             keyboardType="number-pad"
             maxLength={6}
-            autoCapitalize="none"
-            autoCorrect={false}
+            autoComplete="off"
+            caretHidden
+            style={styles.hiddenInput}
+            accessibilityLabel="Token numérico de seis dígitos"
           />
+        </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.button}
-            onPress={handleValidateToken}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.buttonText}>VALIDAR TOKEN</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={[styles.button, token.length !== 6 && styles.buttonDisabled]}
+          onPress={handleValidateToken}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.buttonText}>VALIDAR TOKEN</Text>
+        </TouchableOpacity>
 
         <View style={styles.securityContainer}>
           <Text style={styles.securityText}>
@@ -99,86 +123,98 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    justifyContent: "center",
+    justifyContent: "flex-start",
     paddingHorizontal: 25,
+    paddingTop: 38,
   },
-  logoContainer: {
+  header: {
     alignItems: "center",
-    marginBottom: 45,
-  },
-  logo: {
-    width: 75,
-    height: 75,
-    borderRadius: 20,
-    backgroundColor: colors.primary,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 15,
-  },
-  logoText: {
-    color: colors.white,
-    fontSize: 30,
-    fontWeight: "bold",
+    marginBottom: 34,
   },
   brandName: {
     color: colors.text,
-    fontSize: 29,
+    fontSize: 28,
     fontWeight: "bold",
   },
   brandSubtitle: {
     color: colors.textSecondary,
-    fontSize: 10,
-    letterSpacing: 2,
-    marginTop: 7,
+    fontSize: 9,
+    letterSpacing: 1.5,
+    marginTop: 5,
+  },
+  headerDivider: {
+    width: "100%",
+    height: 1,
+    backgroundColor: colors.border,
+    marginTop: 22,
+    marginBottom: 13,
+  },
+  stepText: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    letterSpacing: 1,
   },
   welcomeContainer: {
-    marginBottom: 25,
+    alignItems: "center",
+    marginBottom: 28,
   },
   welcomeTitle: {
     color: colors.text,
-    fontSize: 25,
+    fontSize: 23,
     fontWeight: "bold",
+    textAlign: "center",
     marginBottom: 10,
   },
   description: {
     color: colors.textSecondary,
-    fontSize: 15,
-    lineHeight: 23,
+    fontSize: 14,
+    lineHeight: 21,
+    textAlign: "center",
   },
-  card: {
+  tokenArea: {
+    position: "relative",
+    marginBottom: 28,
+  },
+  tokenBoxes: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 8,
+  },
+  tokenBox: {
+    flex: 1,
+    maxWidth: 52,
+    height: 58,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 7,
     backgroundColor: colors.surface,
-    padding: 22,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: colors.border,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  label: {
-    color: colors.text,
-    fontSize: 12,
-    fontWeight: "bold",
-    letterSpacing: 1,
-    marginBottom: 12,
-  },
-  input: {
-    backgroundColor: colors.inputBackground,
-    color: colors.text,
-    height: 55,
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginBottom: 18,
-  },
-  inputFocused: {
+  tokenBoxActive: {
     borderColor: colors.primary,
+    borderWidth: 2,
+  },
+  tokenDigit: {
+    color: colors.text,
+    fontSize: 23,
+    fontWeight: "600",
+  },
+  hiddenInput: {
+    position: "absolute",
+    width: 1,
+    height: 1,
+    opacity: 0,
   },
   button: {
     backgroundColor: colors.primary,
-    height: 55,
-    borderRadius: 10,
+    height: 54,
+    borderRadius: 28,
     justifyContent: "center",
     alignItems: "center",
+  },
+  buttonDisabled: {
+    opacity: 0.75,
   },
   buttonText: {
     color: colors.buttonText,
@@ -187,7 +223,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   securityContainer: {
-    marginTop: 20,
+    marginTop: 24,
     alignItems: "center",
   },
   securityText: {
@@ -196,7 +232,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   footer: {
-    paddingVertical: 20,
+    paddingVertical: 18,
     alignItems: "center",
   },
   footerText: {
