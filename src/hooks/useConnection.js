@@ -1,74 +1,45 @@
-
-// Importa os Hooks do React
 import { useState, useEffect, useCallback } from "react";
-
-// Importa a função que verifica a conexão com a API
 import { verificarConexao } from "../services/api";
 
-// Hook personalizado para monitorar a conexão
+/**
+ * Monitora a conexão entre o aplicativo e o BACKEND.
+ * Isso não significa que o ESP8266 também esteja conectado.
+ */
 export default function useConnection() {
-
-  // Guarda se o servidor está conectado
   const [connected, setConnected] = useState(false);
-
-  // Controla se a verificação está acontecendo
   const [checking, setChecking] = useState(true);
+  const [message, setMessage] = useState("Verificando servidor...");
 
-  // Guarda a mensagem de conexão
-  const [message, setMessage] = useState("Verificando conexão...");
-
-  // Função responsável por verificar a conexão
   const checkConnection = useCallback(async () => {
-
-    // Informa que a verificação começou
     setChecking(true);
 
     try {
-
-      // Consulta o backend do TechCampus
       const response = await verificarConexao();
+      const online = response.online === true;
 
-      // Se o servidor respondeu corretamente
-      if (response.online) {
+      setConnected(online);
+      setMessage(
+        online ? "Servidor TechCampus conectado" : "Servidor indisponível"
+      );
 
-        setConnected(true);
-        setMessage("Servidor conectado");
-
-      } else {
-
-        setConnected(false);
-        setMessage("Servidor indisponível");
-
-      }
-
+      return online;
     } catch (error) {
-
-      // Caso não consiga acessar o servidor
       setConnected(false);
-      setMessage("Sem conexão com o servidor");
-
+      setMessage(error.message || "Não foi possível conectar ao servidor.");
+      return false;
     } finally {
-
-      // Finaliza a verificação
       setChecking(false);
-
     }
-
   }, []);
 
-  // Executa a primeira verificação quando o Hook é utilizado
   useEffect(() => {
-
     checkConnection();
-
   }, [checkConnection]);
 
-  // Disponibiliza os dados e a função para as telas
   return {
     connected,
     checking,
     message,
     checkConnection,
   };
-
 }
