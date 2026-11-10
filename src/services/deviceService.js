@@ -1,58 +1,43 @@
-
-// Importa a função principal de comunicação com a API
 import apiRequest from "./api";
 
-// ==========================================
-// CONSULTAR STATUS DO DISPOSITIVO
-// ==========================================
-
+/**
+ * O backend atual não possui uma rota GET para consultar a telemetria
+ * do ESP8266. Não retornamos um status fictício como "conectado".
+ *
+ * Quando a rota de telemetria for criada no backend, ela poderá ser
+ * integrada aqui.
+ */
 export async function consultarStatusDispositivo() {
-
-  // Consulta o backend para obter o estado do ESP8266
-  // ATENÇÃO: a rota abaixo é um exemplo e precisa
-  // existir no backend para funcionar.
-
-  const response = await apiRequest("/api/iot/status");
-
   return {
-    conectado: response.conectado ?? false,
-    ledLigado: response.ledLigado ?? false,
-    dispositivo: response.dispositivo ?? "ESP8266",
-    data: response,
+    disponivel: false,
+    conectado: null,
+    mensagem:
+      "O backend ainda não disponibiliza uma rota de status do ESP8266.",
   };
 }
 
-// ==========================================
-// CONSULTAR STATUS DA LIBERAÇÃO
-// ==========================================
+/**
+ * Registra a retirada como concluída no backend.
+ *
+ * IMPORTANTE:
+ * A rota /api/iot/confirmar marca o pedido como entregue e consome
+ * o token. Ela só deve ser chamada DEPOIS que o equipamento realmente
+ * liberar/entregar o item. Não chamar apenas ao validar o token.
+ */
+export async function registrarRetiradaConcluida(token) {
+  const tokenLimpo = String(token || "").trim();
 
-export async function consultarStatusLiberacao(token) {
-
-  // Impede a consulta sem um token válido
-  if (!token) {
-    throw new Error("Token não informado.");
+  if (!/^\d{6}$/.test(tokenLimpo)) {
+    throw new Error("Token inválido para confirmar a retirada.");
   }
 
-  // Consulta o backend sobre o processo de liberação
-  // A rota também precisa ser implementada no backend.
-
-  const response = await apiRequest(
-    `/api/iot/liberacao/${encodeURIComponent(token)}`
-  );
-
-  return {
-    autorizado: response.autorizado ?? false,
-    liberado: response.liberado ?? false,
-    mensagem: response.mensagem ?? "Status não informado.",
-    data: response,
-  };
+  return apiRequest("/api/iot/confirmar", {
+    method: "POST",
+    body: JSON.stringify({ token: tokenLimpo }),
+  });
 }
-
-// ==========================================
-// EXPORTAÇÕES
-// ==========================================
 
 export default {
   consultarStatusDispositivo,
-  consultarStatusLiberacao,
+  registrarRetiradaConcluida,
 };
