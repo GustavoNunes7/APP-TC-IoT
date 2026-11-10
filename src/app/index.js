@@ -19,7 +19,7 @@ export default function HomeScreen() {
   function handleValidateToken() {
     const tokenLimpo = token.trim();
 
-    if (!/^\\d{6}$/.test(tokenLimpo)) {
+    if (!/^\d{6}$/.test(tokenLimpo)) {
       alert("Digite o token numérico de 6 dígitos.");
       return;
     }
@@ -31,7 +31,7 @@ export default function HomeScreen() {
   }
 
   function handleTokenChange(value) {
-    setToken(value.replace(/\\D/g, "").slice(0, 6));
+    setToken(value.replace(/\D/g, "").slice(0, 6));
   }
 
   return (
