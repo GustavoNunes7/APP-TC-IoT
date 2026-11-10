@@ -1,8 +1,8 @@
 // Base da API do TechCampus.
 //
-// Emulador Android: http://10.0.2.2:3022
+// Emulador Android: http://10.0.2.2:3001
 // Celular físico: use o IP local do computador, por exemplo:
-// EXPO_PUBLIC_API_URL=http://192.168.0.100:3022
+// EXPO_PUBLIC_API_URL=http://192.168.0.100:3001
 //
 // Também é possível definir EXPO_PUBLIC_API_URL no ambiente do Expo.
 
