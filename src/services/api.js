@@ -7,7 +7,7 @@
 // Também é possível definir EXPO_PUBLIC_API_URL no ambiente do Expo.
 
 const BASE_URL = (
-  process.env.EXPO_PUBLIC_API_URL || "http://10.0.2.2:3022"
+  process.env.EXPO_PUBLIC_API_URL || "http://10.0.2.2:3001"
 ).replace(/\/$/, "");
 
 const TIMEOUT = 10000;
