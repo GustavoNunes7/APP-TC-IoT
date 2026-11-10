@@ -1,8 +1,7 @@
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
   KeyboardAvoidingView,
@@ -10,11 +9,10 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import colors from "../constants/colors";
+import TokenInput from "../components/TokenInput";
 
 export default function HomeScreen() {
   const [token, setToken] = useState("");
-  const [focused, setFocused] = useState(false);
-  const tokenInputRef = useRef(null);
 
   function handleValidateToken() {
     const tokenLimpo = token.trim();
@@ -30,17 +28,12 @@ export default function HomeScreen() {
     });
   }
 
-  function handleTokenChange(value) {
-    setToken(value.replace(/\D/g, "").slice(0, 6));
-  }
-
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <View style={styles.content}>
-        {/* Identidade visual e instruções no topo */}
         <View style={styles.header}>
           <Text style={styles.brandName}>TechCampus</Text>
           <Text style={styles.brandSubtitle}>
@@ -57,42 +50,8 @@ export default function HomeScreen() {
           </Text>
         </View>
 
-        {/* Seis quadrados visuais ligados a um único campo numérico */}
-        <TouchableOpacity
-          activeOpacity={1}
-          style={styles.tokenArea}
-          onPress={() => tokenInputRef.current?.focus()}
-        >
-          <View style={styles.tokenBoxes}>
-            {Array.from({ length: 6 }).map((_, index) => (
-              <View
-                key={index}
-                style={[
-                  styles.tokenBox,
-                  focused && index === token.length && styles.tokenBoxActive,
-                ]}
-              >
-                <Text style={styles.tokenDigit}>
-                  {token[index] || ""}
-                </Text>
-              </View>
-            ))}
-          </View>
-
-          <TextInput
-            ref={tokenInputRef}
-            value={token}
-            onChangeText={handleTokenChange}
-            onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
-            keyboardType="number-pad"
-            maxLength={6}
-            autoComplete="off"
-            caretHidden
-            style={styles.hiddenInput}
-            accessibilityLabel="Token numérico de seis dígitos"
-          />
-        </TouchableOpacity>
+        {/* Componente reutilizável com seis quadrados de digitação. */}
+        <TokenInput value={token} onChangeText={setToken} />
 
         <TouchableOpacity
           style={[styles.button, token.length !== 6 && styles.buttonDisabled]}
@@ -170,41 +129,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 21,
     textAlign: "center",
-  },
-  tokenArea: {
-    position: "relative",
-    marginBottom: 28,
-  },
-  tokenBoxes: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 8,
-  },
-  tokenBox: {
-    flex: 1,
-    maxWidth: 52,
-    height: 58,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 7,
-    backgroundColor: colors.surface,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  tokenBoxActive: {
-    borderColor: colors.primary,
-    borderWidth: 2,
-  },
-  tokenDigit: {
-    color: colors.text,
-    fontSize: 23,
-    fontWeight: "600",
-  },
-  hiddenInput: {
-    position: "absolute",
-    width: 1,
-    height: 1,
-    opacity: 0,
   },
   button: {
     backgroundColor: colors.primary,
