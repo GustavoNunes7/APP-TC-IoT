@@ -25,7 +25,7 @@ export default function TokenInput({
         <TextInput
           style={styles.input}
           value={value}
-          onChangeText={(text) => onChangeText(text.replace(/\\D/g, "").slice(0, 6))}
+          onChangeText={(text) => onChangeText(text.replace(/[^0-9]/g, "").slice(0, 6))}
           placeholder={placeholder}
           placeholderTextColor={colors.placeholder}
           keyboardType="number-pad"
