@@ -1,57 +1,35 @@
-
-// Importa a função de comunicação com o backend
 import apiRequest from "./api";
 
-// ==========================================
-// VALIDAR TOKEN DE RETIRADA
-// ==========================================
-
+/**
+ * Valida um token de retirada no backend TechCampus.
+ *
+ * A rota confirmada no backend é POST /api/iot/validar.
+ * O servidor espera um token numérico de exatamente 6 dígitos
+ * e responde com { valido, pedidoId, produtos, expiraEm }.
+ */
 export async function validarToken(token) {
+  const tokenLimpo = String(token || "").trim();
 
-  // Verifica se o aluno digitou algum token
-  if (!token || !token.trim()) {
-    throw new Error("Digite um token para continuar.");
+  if (!/^\d{6}$/.test(tokenLimpo)) {
+    throw new Error("O token deve conter exatamente 6 números.");
   }
 
-  try {
+  const response = await apiRequest("/api/iot/validar", {
+    method: "POST",
+    body: JSON.stringify({ token: tokenLimpo }),
+  });
 
-    // Envia o token para o backend do TechCampus
-    // ATENÇÃO: a rota abaixo é uma proposta.
-    // Precisamos confirmar a rota real do backend.
-
-    const response = await apiRequest("/api/iot/validar-token", {
-      method: "POST",
-
-      body: JSON.stringify({
-        token: token.trim(),
-      }),
-    });
-
-    // Organiza os dados recebidos do servidor
-    return {
-      autorizado: response.autorizado ?? false,
-
-      mensagem:
-        response.mensagem ||
-        "Não foi possível validar o token.",
-
-      token: response.token ?? token.trim(),
-
-      data: response,
-    };
-
-  } catch (error) {
-
-    // Encaminha o erro para a tela que chamou a função
-    throw error;
-
-  }
+  return {
+    autorizado: response?.valido === true,
+    mensagem: response?.valido
+      ? "Token válido. Retirada autorizada."
+      : response?.erro || "Token inválido ou não autorizado.",
+    token: tokenLimpo,
+    pedidoId: response?.pedidoId ?? null,
+    produtos: response?.produtos ?? "",
+    expiraEm: response?.expiraEm ?? null,
+    data: response,
+  };
 }
 
-// ==========================================
-// EXPORTAÇÃO PADRÃO
-// ==========================================
-
-export default {
-  validarToken,
-};
+export default { validarToken };
