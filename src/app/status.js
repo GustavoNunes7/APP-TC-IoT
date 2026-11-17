@@ -1,16 +1,16 @@
 import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-} from "react-native";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import colors from "../constants/colors";
 import useConnection from "../hooks/useConnection";
+import Header from "../components/Header";
+import StatusCard from "../components/StatusCard";
+import PrimaryButton from "../components/PrimaryButton";
+import FadeIn from "../components/FadeIn";
 
 export default function StatusScreen() {
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
   const token = Array.isArray(params.token) ? params.token[0] : params.token;
   const produtos = Array.isArray(params.produtos) ? params.produtos[0] : params.produtos;
@@ -20,127 +20,210 @@ export default function StatusScreen() {
   // Esta verificação é do backend, não do ESP8266.
   const { connected, checking, message, checkConnection } = useConnection();
 
+  const tone = autorizado ? colors.success : colors.error;
+  const toneSoft = autorizado ? colors.successSoft : colors.errorSoft;
+  const digits = String(token || "").split("");
+
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-    >
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>TechCampus</Text>
-        <Text style={styles.headerSubtitle}>STATUS DA RETIRADA</Text>
-      </View>
+    <View style={styles.container}>
+      <View style={[styles.glow, { backgroundColor: toneSoft }]} pointerEvents="none" />
 
-      <View style={styles.mainCard}>
-        <View style={[styles.statusIcon, { backgroundColor: autorizado ? colors.success : colors.error }]}>
-          <Text style={styles.statusIconText}>{autorizado ? "✓" : "!"}</Text>
-        </View>
-        <Text style={styles.mainTitle}>
-          {autorizado ? "Token validado!" : "Retirada não autorizada"}
-        </Text>
-        <Text style={styles.mainDescription}>
-          {autorizado
-            ? "O backend confirmou que o token é válido. Aguarde a liberação pelo equipamento."
-            : "O token não foi autorizado pelo servidor."}
-        </Text>
-      </View>
-
-      <View style={styles.infoCard}>
-        <Text style={styles.sectionTitle}>COMUNICAÇÃO</Text>
-
-        <View style={styles.infoRow}>
-          <View style={styles.infoTextContainer}>
-            <Text style={styles.infoTitle}>Servidor TechCampus</Text>
-            <Text style={styles.infoSubtitle}>{message}</Text>
-          </View>
-          <View style={styles.statusContainer}>
-            <View style={[styles.dot, { backgroundColor: checking ? colors.warning : connected ? colors.success : colors.error }]} />
-            <Text style={styles.statusText}>
-              {checking ? "Verificando" : connected ? "Conectado" : "Offline"}
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.separator} />
-
-        <View style={styles.infoRow}>
-          <View style={styles.infoTextContainer}>
-            <Text style={styles.infoTitle}>ESP8266</Text>
-            <Text style={styles.infoSubtitle}>
-              O backend atual ainda não fornece telemetria do dispositivo.
-            </Text>
-          </View>
-          <Text style={styles.pendingText}>Não verificado</Text>
-        </View>
-
-        <View style={styles.separator} />
-
-        <View style={styles.infoRow}>
-          <View style={styles.infoTextContainer}>
-            <Text style={styles.infoTitle}>LED indicador</Text>
-            <Text style={styles.infoSubtitle}>
-              O aplicativo ainda não recebe confirmação do estado do LED.
-            </Text>
-          </View>
-          <Text style={styles.pendingText}>Aguardando ESP</Text>
-        </View>
-      </View>
-
-      <View style={styles.tokenCard}>
-        <Text style={styles.tokenLabel}>TOKEN VALIDADO</Text>
-        <Text style={styles.tokenValue}>{token || "Não informado"}</Text>
-        {pedidoId ? <Text style={styles.detailText}>Pedido #{pedidoId}</Text> : null}
-        {produtos ? <Text style={styles.detailText}>Itens: {produtos}</Text> : null}
-      </View>
-
-      <TouchableOpacity
-        style={[styles.secondaryButton, checking && styles.disabledButton]}
-        onPress={checkConnection}
-        disabled={checking}
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 16 },
+        ]}
+        showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.secondaryButtonText}>
-          {checking ? "VERIFICANDO..." : "VERIFICAR SERVIDOR"}
-        </Text>
-      </TouchableOpacity>
+        <FadeIn>
+          <Header connected={connected} checking={checking} />
+        </FadeIn>
 
-      <TouchableOpacity style={styles.button} onPress={() => router.replace("/")}>
-        <Text style={styles.buttonText}>VOLTAR AO INÍCIO</Text>
-      </TouchableOpacity>
+        {/* Resultado da validação */}
+        <FadeIn delay={120} style={[styles.mainCard, { borderColor: tone }]}>
+          <View style={[styles.statusIcon, { backgroundColor: tone }]}>
+            <Text style={styles.statusIconText}>{autorizado ? "✓" : "!"}</Text>
+          </View>
+          <Text style={[styles.eyebrow, { color: tone }]}>
+            {autorizado ? "LIBERAÇÃO AUTORIZADA" : "ACESSO NEGADO"}
+          </Text>
+          <Text style={styles.mainTitle}>
+            {autorizado ? "Token validado!" : "Retirada não autorizada"}
+          </Text>
+          <Text style={styles.mainDescription}>
+            {autorizado
+              ? "O backend confirmou que o token é válido. Aguarde a liberação pelo equipamento."
+              : "O token não foi autorizado pelo servidor."}
+          </Text>
 
-      <Text style={styles.footer}>TechCampus IoT • SENAI</Text>
-    </ScrollView>
+          {!!token && (
+            <View style={styles.tokenRow}>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <View key={i} style={[styles.tokenBox, { borderColor: tone }]}>
+                  <Text style={styles.tokenDigit}>{digits[i] || "–"}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+        </FadeIn>
+
+        {/* Pedido e produtos: só aparecem quando o backend informou. */}
+        {(!!pedidoId || !!produtos) && (
+          <FadeIn delay={220} style={styles.card}>
+            <Text style={styles.sectionTitle}>PEDIDO</Text>
+            {!!pedidoId && (
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Identificação</Text>
+                <Text style={styles.detailValue}>#{pedidoId}</Text>
+              </View>
+            )}
+            {!!pedidoId && !!produtos && <View style={styles.separator} />}
+            {!!produtos && (
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Produtos</Text>
+                <Text style={[styles.detailValue, styles.detailValueWrap]}>{produtos}</Text>
+              </View>
+            )}
+          </FadeIn>
+        )}
+
+        {/* Comunicação */}
+        <FadeIn delay={320} style={styles.cardList}>
+          <Text style={styles.sectionTitle}>COMUNICAÇÃO</Text>
+
+          <StatusCard
+            icon="⇄"
+            title="Servidor TechCampus"
+            description={message}
+            status={checking ? "Verificando" : connected ? "Conectado" : "Offline"}
+            type={checking ? "warning" : connected ? "success" : "error"}
+          />
+
+          {/* O backend atual não fornece telemetria do ESP8266 nem do LED,
+              então nada é afirmado sobre eles. */}
+          <StatusCard
+            icon="◈"
+            title="ESP8266"
+            description="O backend atual ainda não fornece telemetria do dispositivo."
+            status="Não verificado"
+            type="warning"
+          />
+          <StatusCard
+            icon="●"
+            title="LED indicador"
+            description="O aplicativo ainda não recebe confirmação do estado do LED."
+            status="Aguardando ESP"
+            type="warning"
+          />
+        </FadeIn>
+
+        <FadeIn delay={420} style={styles.actions}>
+          <PrimaryButton
+            title={checking ? "VERIFICANDO..." : "VERIFICAR SERVIDOR"}
+            icon="↻"
+            variant="outline"
+            onPress={checkConnection}
+            disabled={checking}
+          />
+          <PrimaryButton
+            title="VOLTAR AO INÍCIO"
+            onPress={() => router.replace("/")}
+          />
+        </FadeIn>
+
+        <Text style={styles.footer}>TechCampus IoT • SENAI</Text>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  content: { flexGrow: 1, paddingHorizontal: 22, paddingTop: 48, paddingBottom: 24 },
-  header: { marginBottom: 26 },
-  headerTitle: { color: colors.text, fontSize: 25, fontWeight: "bold" },
-  headerSubtitle: { color: colors.primary, fontSize: 11, letterSpacing: 2, marginTop: 5, fontWeight: "bold" },
-  mainCard: { backgroundColor: colors.surface, borderRadius: 18, borderWidth: 1, borderColor: colors.border, padding: 24, alignItems: "center", marginBottom: 18 },
-  statusIcon: { width: 62, height: 62, borderRadius: 31, justifyContent: "center", alignItems: "center", marginBottom: 16 },
+  glow: {
+    position: "absolute",
+    top: -140,
+    alignSelf: "center",
+    width: 360,
+    height: 360,
+    borderRadius: 180,
+  },
+  content: { flexGrow: 1, paddingHorizontal: 22 },
+  mainCard: {
+    marginTop: 28,
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: 24,
+    borderWidth: 1,
+    padding: 22,
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  statusIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 14,
+  },
   statusIconText: { color: colors.white, fontSize: 34, fontWeight: "bold" },
-  mainTitle: { color: colors.text, fontSize: 21, fontWeight: "bold", textAlign: "center", marginBottom: 9 },
-  mainDescription: { color: colors.textSecondary, fontSize: 13, textAlign: "center", lineHeight: 20 },
-  infoCard: { backgroundColor: colors.surface, borderRadius: 18, borderWidth: 1, borderColor: colors.border, padding: 18, marginBottom: 16 },
-  sectionTitle: { color: colors.textSecondary, fontSize: 11, fontWeight: "bold", letterSpacing: 1.5, marginBottom: 15 },
-  infoRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", minHeight: 54, gap: 10 },
-  infoTextContainer: { flex: 1 },
-  infoTitle: { color: colors.text, fontSize: 13, fontWeight: "bold" },
-  infoSubtitle: { color: colors.textMuted, fontSize: 10, marginTop: 4, lineHeight: 15 },
-  statusContainer: { flexDirection: "row", alignItems: "center", gap: 6 },
-  dot: { width: 9, height: 9, borderRadius: 5 },
-  statusText: { color: colors.text, fontSize: 11, fontWeight: "bold" },
-  pendingText: { color: colors.warning, fontSize: 10, fontWeight: "bold", textAlign: "right", maxWidth: 90 },
-  separator: { height: 1, backgroundColor: colors.border, marginVertical: 10 },
-  tokenCard: { backgroundColor: colors.backgroundSecondary, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: colors.border, marginBottom: 16 },
-  tokenLabel: { color: colors.textMuted, fontSize: 10, fontWeight: "bold", letterSpacing: 1, marginBottom: 8 },
-  tokenValue: { color: colors.text, fontSize: 19, fontWeight: "bold", letterSpacing: 2 },
-  detailText: { color: colors.textSecondary, fontSize: 11, marginTop: 7 },
-  secondaryButton: { height: 48, borderRadius: 10, borderWidth: 1, borderColor: colors.primary, justifyContent: "center", alignItems: "center", marginBottom: 10 },
-  secondaryButtonText: { color: colors.primaryLight, fontSize: 12, fontWeight: "bold", letterSpacing: 1 },
-  disabledButton: { opacity: 0.5 },
-  button: { height: 52, backgroundColor: colors.primary, borderRadius: 10, justifyContent: "center", alignItems: "center" },
-  buttonText: { color: colors.white, fontSize: 13, fontWeight: "bold", letterSpacing: 1 },
-  footer: { color: colors.textMuted, fontSize: 10, textAlign: "center", marginTop: 22 },
+  eyebrow: { fontSize: 11, fontWeight: "bold", letterSpacing: 3, marginBottom: 8 },
+  mainTitle: {
+    color: colors.text,
+    fontSize: 24,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  mainDescription: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  tokenRow: { flexDirection: "row", justifyContent: "center", gap: 7, marginTop: 20 },
+  tokenBox: {
+    width: 40,
+    height: 48,
+    borderRadius: 11,
+    borderWidth: 1.5,
+    backgroundColor: colors.background,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  tokenDigit: { color: colors.white, fontSize: 20, fontWeight: "bold" },
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 18,
+    marginBottom: 16,
+  },
+  cardList: { gap: 10, marginBottom: 20 },
+  sectionTitle: {
+    color: colors.textSecondary,
+    fontSize: 11,
+    fontWeight: "bold",
+    letterSpacing: 2,
+    marginBottom: 6,
+  },
+  detailRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: 14,
+    paddingTop: 8,
+  },
+  detailLabel: { color: colors.textMuted, fontSize: 12 },
+  detailValue: { color: colors.text, fontSize: 14, fontWeight: "bold" },
+  detailValueWrap: { flex: 1, textAlign: "right" },
+  separator: { height: 1, backgroundColor: colors.border, marginTop: 10 },
+  actions: { gap: 12 },
+  footer: {
+    color: colors.textMuted,
+    fontSize: 11,
+    textAlign: "center",
+    marginTop: 26,
+    letterSpacing: 0.5,
+  },
 });

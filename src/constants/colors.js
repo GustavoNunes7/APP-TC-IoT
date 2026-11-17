@@ -37,6 +37,14 @@ const colors = {
   deviceConnected: "#22C55E",
   deviceDisconnected: "#EF4444",
 
+  // Efeitos visuais (redesign)
+  primaryGlow: "rgba(227, 27, 35, 0.35)",
+  primarySoft: "rgba(227, 27, 35, 0.12)",
+  successSoft: "rgba(34, 197, 94, 0.12)",
+  errorSoft: "rgba(239, 68, 68, 0.12)",
+  warningSoft: "rgba(245, 158, 11, 0.12)",
+  successDark: "#15803D",
+
   // Outros
   white: "#FFFFFF",
   black: "#000000",

@@ -1,121 +1,146 @@
-
-// Importa o React
-import React from "react";
-
-// Componentes do React Native
+import React, { useRef } from "react";
 import {
-  TouchableOpacity,
+  Pressable,
   Text,
+  View,
   ActivityIndicator,
+  Animated,
   StyleSheet,
 } from "react-native";
-
-// Importa as cores do TechCampus
 import colors from "../constants/colors";
 
-// Componente de botão reutilizável
+// Botão principal reutilizável, com animação ao pressionar.
 export default function PrimaryButton({
-
-  // Texto exibido no botão
   title = "CONTINUAR",
-
-  // Função executada ao clicar
   onPress,
-
-  // Indica se o botão está carregando
   loading = false,
-
-  // Impede o clique quando necessário
   disabled = false,
-
-  // Permite personalizar a largura
   fullWidth = true,
-
+  // Glifo opcional exibido antes do texto (ex.: "✓", "↻").
+  icon,
+  // "solid" (vermelho) ou "outline".
+  variant = "solid",
 }) {
-
-  // Verifica se o botão deve ficar desativado
+  const scale = useRef(new Animated.Value(1)).current;
   const isDisabled = disabled || loading;
+  const outline = variant === "outline";
+
+  function animateTo(value) {
+    Animated.spring(scale, {
+      toValue: value,
+      friction: 7,
+      tension: 200,
+      useNativeDriver: true,
+    }).start();
+  }
 
   return (
-
-    <TouchableOpacity
-
-      // Aplica os estilos do botão
+    <Animated.View
       style={[
-        styles.button,
-
-        // Ocupa toda a largura disponível, por padrão
         fullWidth && styles.fullWidth,
-
-        // Altera a aparência quando desativado
-        isDisabled && styles.disabled,
+        { transform: [{ scale }] },
       ]}
-
-      // Função executada ao clicar
-      onPress={onPress}
-
-      // Impede cliques durante o carregamento
-      disabled={isDisabled}
-
-      // Efeito visual ao pressionar
-      activeOpacity={0.8}
     >
+      <Pressable
+        onPress={onPress}
+        disabled={isDisabled}
+        onPressIn={() => animateTo(0.97)}
+        onPressOut={() => animateTo(1)}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: isDisabled }}
+        style={[
+          styles.button,
+          outline ? styles.outline : styles.solid,
+          !outline && !isDisabled && styles.glow,
+          isDisabled && !loading && (outline ? styles.disabledOutline : styles.disabledSolid),
+        ]}
+      >
+        {/* Faixa superior clara simula um gradiente discreto, sem dependências. */}
+        {!outline && !isDisabled && <View style={styles.sheen} pointerEvents="none" />}
 
-      {/* Mostra carregamento ou texto */}
-      {loading ? (
-
-        // Indicador de carregamento
-        <ActivityIndicator
-          color={colors.white}
-          size="small"
-        />
-
-      ) : (
-
-        // Texto do botão
-        <Text style={styles.buttonText}>
-          {title}
-        </Text>
-
-      )}
-
-    </TouchableOpacity>
+        {loading ? (
+          <ActivityIndicator color={colors.white} size="small" />
+        ) : (
+          <View style={styles.content}>
+            {!!icon && <Text style={[styles.icon, isDisabled && styles.textDisabled]}>{icon}</Text>}
+            <Text
+              style={[
+                styles.text,
+                outline && styles.textOutline,
+                isDisabled && styles.textDisabled,
+              ]}
+            >
+              {title}
+            </Text>
+          </View>
+        )}
+      </Pressable>
+    </Animated.View>
   );
 }
 
-// Estilização do botão
 const styles = StyleSheet.create({
-
-  // Estrutura principal
+  fullWidth: { width: "100%" },
   button: {
-    height: 55,
-    backgroundColor: colors.primary,
-    borderRadius: 10,
-
-    // Centraliza o conteúdo
+    height: 58,
+    borderRadius: 16,
+    overflow: "hidden",
     justifyContent: "center",
     alignItems: "center",
-
-    // Espaçamento interno
     paddingHorizontal: 20,
   },
-
-  // Ocupa toda a largura disponível
-  fullWidth: {
-    width: "100%",
+  solid: {
+    backgroundColor: colors.primary,
+    borderWidth: 1,
+    borderColor: colors.primaryLight,
   },
-
-  // Texto
-  buttonText: {
+  outline: {
+    backgroundColor: "transparent",
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+  },
+  glow: {
+    shadowColor: colors.primary,
+    shadowOpacity: 0.55,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 8,
+  },
+  sheen: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: "48%",
+    backgroundColor: "rgba(255,255,255,0.09)",
+  },
+  disabledSolid: {
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+  },
+  disabledOutline: {
+    borderColor: colors.border,
+  },
+  content: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  icon: {
     color: colors.white,
-    fontSize: 14,
+    fontSize: 17,
     fontWeight: "bold",
-    letterSpacing: 1,
   },
-
-  // Aparência quando desativado
-  disabled: {
-    opacity: 0.5,
+  text: {
+    color: colors.white,
+    fontSize: 15,
+    fontWeight: "bold",
+    letterSpacing: 1.5,
   },
-
+  textOutline: {
+    color: colors.primaryLight,
+  },
+  textDisabled: {
+    color: colors.textMuted,
+  },
 });
