@@ -112,7 +112,7 @@ export default function HomeScreen() {
               <Text style={styles.lockText}>🔒</Text>
             </View>
             <Text style={styles.securityText}>
-              Validação segura pelo sistema TechCampus.
+              Validação segura pelo sistema TechCaampus.
             </Text>
           </View>
 
