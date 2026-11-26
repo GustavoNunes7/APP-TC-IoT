@@ -97,10 +97,10 @@ Este procedimento foi preparado para executar o backend TechCampus no notebook L
 
 ### 2. Iniciar o backend TechCampus
 
-Abra um terminal e entre na pasta do projeto principal:
+Abra um terminal e entre na pasta do repositório DEMO_TC:
 
 ```bash
-cd ~/Secretária/TechCampus
+cd ~/Secretária/DEMO_TC
 ```
 
 Execute o inicializador Linux:
@@ -109,7 +109,7 @@ Execute o inicializador Linux:
 ./INICIAR-Linux.sh
 ```
 
-O backend utilizado pelo aplicativo deve estar disponível na porta `3022`. Mantenha esse terminal aberto enquanto utilizar o aplicativo.
+O backend utilizado pelo aplicativo deve ser a **DEMO_TC**, disponível na porta `3022`. Mantenha esse terminal aberto enquanto utilizar o aplicativo.
 
 > Se o arquivo não tiver permissão de execução, execute uma vez `chmod +x INICIAR-Linux.sh` e tente novamente.
 
@@ -244,7 +244,7 @@ npx expo start -c
 
 ## Executar o backend TechCampus
 
-O backend não está incluído neste repositório. Ele deve ser iniciado separadamente, na pasta do projeto principal **TechCampus**.
+O backend não está incluído neste repositório. Para estes testes, inicie separadamente o repositório **DEMO_TC** na porta `3022`.
 
 Confira a porta configurada no backend antes de iniciar o aplicativo. O servidor utiliza a porta definida em `PORT` no arquivo `.env`; quando não há configuração, a porta padrão do código é `3001`.
 
