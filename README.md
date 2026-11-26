@@ -49,7 +49,7 @@ O endereço da API é configurado em `src/services/api.js` pela variável `EXPO_
 Por padrão, o aplicativo utiliza:
 
 ```text
-http://10.0.2.2:3001
+http://10.0.2.2:3022
 ```
 
 O endereço `10.0.2.2` permite que o emulador Android acesse o computador que está executando o backend.
@@ -72,7 +72,7 @@ EXPO_PUBLIC_API_URL=http://10.0.2.2:3022
 3. No arquivo `.env`, informe o IP do computador e a porta utilizada pelo backend. Exemplo:
 
    ```env
-   EXPO_PUBLIC_API_URL=http://192.168.0.100:3001
+   EXPO_PUBLIC_API_URL=http://192.168.0.100:3022
    ```
 
    Substitua `192.168.0.100` pelo endereço IPv4 real do computador.
