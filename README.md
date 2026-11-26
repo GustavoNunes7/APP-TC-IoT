@@ -84,6 +84,142 @@ EXPO_PUBLIC_API_URL=http://10.0.2.2:3022
 
 Sempre que alterar o arquivo `.env`, reinicie o Expo para carregar a nova variável.
 
+
+## Executar no Linux Mint (notebook + celular físico)
+
+Este procedimento foi preparado para executar o backend TechCampus no notebook Linux Mint e abrir o aplicativo no celular pela mesma rede Wi-Fi.
+
+### 1. Conectar notebook e celular
+
+1. Conecte o notebook Linux Mint à rede Wi-Fi.
+2. Conecte o celular à mesma rede.
+3. Mantenha os dois dispositivos na mesma rede local durante os testes.
+
+### 2. Iniciar o backend TechCampus
+
+Abra um terminal e entre na pasta do projeto principal:
+
+```bash
+cd ~/Secretária/TechCampus
+```
+
+Execute o inicializador Linux:
+
+```bash
+./INICIAR-Linux.sh
+```
+
+O backend utilizado pelo aplicativo deve estar disponível na porta `3022`. Mantenha esse terminal aberto enquanto utilizar o aplicativo.
+
+> Se o arquivo não tiver permissão de execução, execute uma vez `chmod +x INICIAR-Linux.sh` e tente novamente.
+
+### 3. Descobrir o IP do notebook
+
+Abra outro terminal e execute:
+
+```bash
+hostname -I
+```
+
+Identifique o endereço IPv4 da rede Wi-Fi que também está sendo utilizada pelo celular. Por exemplo:
+
+```text
+192.168.0.16
+```
+
+O IP acima é apenas um exemplo. Utilize o endereço mostrado no seu notebook.
+
+### 4. Configurar o endereço da API no aplicativo
+
+Na pasta raiz deste projeto (`APP-TC-IoT`), crie ou edite o arquivo `.env`:
+
+```bash
+xed .env
+```
+
+Adicione a variável abaixo, substituindo o IP pelo endereço IPv4 atual do notebook:
+
+```env
+EXPO_PUBLIC_API_URL=http://192.168.0.16:3022
+```
+
+Salve o arquivo. Não utilize `localhost` nem `127.0.0.1` para um celular físico, pois esses endereços apontam para o próprio celular.
+
+> O endereço IP pode mudar ao trocar de rede ou reconectar o notebook. Se isso acontecer, execute novamente `hostname -I` e atualize o valor no arquivo `.env`.
+
+### 5. Testar a API pelo celular
+
+Antes de abrir o aplicativo, utilize o navegador do celular para acessar:
+
+```text
+http://IP_DO_NOTEBOOK:3022/api/saude
+```
+
+Exemplo:
+
+```text
+http://192.168.0.16:3022/api/saude
+```
+
+Se a API responder indicando que está online, o celular conseguiu alcançar o backend pela rede local.
+
+Se não responder, confira se:
+- o backend continua em execução na porta `3022`;
+- o celular e o notebook estão na mesma rede Wi-Fi;
+- o IP informado está correto;
+- o firewall do Linux Mint não está bloqueando a porta do servidor.
+
+### 6. Iniciar o Expo
+
+Abra um segundo terminal na pasta do aplicativo:
+
+```bash
+cd ~/Secretária/APP-TC-IoT
+```
+
+Inicie o Expo limpando o cache para carregar a configuração atualizada:
+
+```bash
+npx expo start -c
+```
+
+Aguarde o QR Code. No celular, abra o Expo Go e escaneie o código para carregar o aplicativo.
+
+O Expo utiliza normalmente a porta `8081` para servir o aplicativo durante o desenvolvimento. Essa porta é diferente da porta `3022`, utilizada pelo backend TechCampus.
+
+Se o celular não conseguir carregar o projeto pela rede local, pode-se testar:
+
+```bash
+npx expo start --tunnel
+```
+
+O modo Tunnel ajuda a carregar o projeto Expo em algumas redes restritivas, mas não substitui a conexão do aplicativo com o backend na porta `3022`.
+
+### 7. Verificar a integração
+
+Com o aplicativo aberto:
+
+1. Confira se o status do servidor aparece como online.
+2. Teste o acesso às funcionalidades disponíveis.
+3. Teste a validação de um token de teste autorizado pelo backend.
+4. Confirme separadamente a integração física com o ESP8266, quando estiver disponível.
+
+A resposta positiva de `/api/saude` confirma apenas que o backend está acessível; não comprova, sozinha, que a validação de token ou o dispositivo IoT estejam funcionando.
+
+### Checklist antes da demonstração no Linux Mint
+
+- [ ] Notebook e celular conectados à mesma rede Wi-Fi.
+- [ ] Backend TechCampus iniciado na porta `3022`.
+- [ ] IP atual do notebook identificado com `hostname -I`.
+- [ ] `.env` do aplicativo configurado com `EXPO_PUBLIC_API_URL`.
+- [ ] Endpoint `/api/saude` acessível pelo navegador do celular.
+- [ ] Expo iniciado com `npx expo start -c`.
+- [ ] Aplicativo aberto pelo Expo Go.
+- [ ] Login e funcionalidades principais testados.
+- [ ] Integração IoT testada separadamente.
+
+Mantenha os terminais do backend e do Expo abertos durante a demonstração.
+
 ## Executar o aplicativo
 
 Com as dependências instaladas, execute:
