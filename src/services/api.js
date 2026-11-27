@@ -1,38 +1,144 @@
-// Base da API do TechCampus.
-//
-// DEMO_TC (porta padrão): http://10.0.2.2:3022
-// Celular físico: use o IP local do computador, por exemplo:
-// EXPO_PUBLIC_API_URL=http://192.168.0.100:3001
-//
-// Também é possível definir EXPO_PUBLIC_API_URL no ambiente do Expo.
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const BASE_URL = (
-  process.env.EXPO_PUBLIC_API_URL || "http://10.0.2.2:3022"
-).replace(/\/$/, "");
+const STORAGE_KEY = "@techcampus:servidor:v2";
+
+// Permite usar EXPO_PUBLIC_API_URL ou a configuração padrão.
+// O IP abaixo é o endereço atual do notebook na rede local.
+const ENV_URL = process.env.EXPO_PUBLIC_API_URL || "";
+
+const envMatch = ENV_URL.match(
+  /^(https?):\/\/([^/:?#]+)(?::(\d+))?\/?$/i
+);
+
+const DEFAULT_PROTOCOL = envMatch?.[1] || "http";
+const DEFAULT_HOST = envMatch?.[2] || "10.21.129.20";
+const DEFAULT_PORT = Number(envMatch?.[3] || 3022);
+
+let serverProtocol = DEFAULT_PROTOCOL;
+let serverHost = DEFAULT_HOST;
+let serverPort = DEFAULT_PORT;
+
+// Carrega a configuração salva no celular.
+const configReady = (async () => {
+  try {
+    const saved = await AsyncStorage.getItem(STORAGE_KEY);
+
+    if (saved) {
+      const config = JSON.parse(saved);
+
+      if (config.host && config.port) {
+        serverHost = config.host;
+        serverPort = Number(config.port);
+        serverProtocol = config.protocol || DEFAULT_PROTOCOL;
+      }
+    }
+  } catch (error) {
+    console.warn(
+      "Não foi possível carregar o servidor salvo:",
+      error
+    );
+  }
+})();
+
+// Retorna o endereço completo do backend.
+export const getBaseUrl = () =>
+  `${serverProtocol}://${serverHost}:${serverPort}`;
+
+// Configura e salva o servidor no celular.
+export async function configurarServidor(host, port = DEFAULT_PORT) {
+  const novoHost = String(host || "")
+    .trim()
+    .replace(/^https?:\/\//, "")
+    .replace(/\/+$/, "");
+
+  const novaPorta = Number(port);
+
+  if (!novoHost || /[/:?#\s]/.test(novoHost)) {
+    throw new Error("Informe um endereço IP ou domínio válido.");
+  }
+
+  if (
+    !Number.isInteger(novaPorta) ||
+    novaPorta < 1 ||
+    novaPorta > 65535
+  ) {
+    throw new Error("Informe uma porta válida.");
+  }
+
+  await configReady;
+
+  const anterior = {
+    host: serverHost,
+    port: serverPort,
+    protocol: serverProtocol,
+  };
+
+  serverHost = novoHost;
+  serverPort = novaPorta;
+  serverProtocol = "http";
+
+  try {
+    await AsyncStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        host: serverHost,
+        port: serverPort,
+        protocol: serverProtocol,
+      })
+    );
+  } catch (error) {
+    serverHost = anterior.host;
+    serverPort = anterior.port;
+    serverProtocol = anterior.protocol;
+
+    throw new Error(
+      "Não foi possível salvar a configuração no celular."
+    );
+  }
+
+  return getBaseUrl();
+}
+
+// Recupera a configuração atual.
+export async function obterConfiguracaoServidor() {
+  await configReady;
+
+  return {
+    host: serverHost,
+    port: serverPort,
+    url: getBaseUrl(),
+  };
+}
 
 const TIMEOUT = 10000;
 
-/**
- * Faz uma requisição HTTP para o backend.
- * Aceita respostas JSON e respostas sem conteúdo.
- */
+// Faz requisições ao backend.
 async function apiRequest(endpoint, options = {}) {
+  await configReady;
+
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT);
+
+  const timeoutId = setTimeout(
+    () => controller.abort(),
+    TIMEOUT
+  );
 
   try {
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
-      ...options,
-      headers: {
-        Accept: "application/json",
-        ...(options.body ? { "Content-Type": "application/json" } : {}),
-        ...options.headers,
-      },
-      signal: controller.signal,
-    });
+    const response = await fetch(
+      `${getBaseUrl()}${endpoint}`,
+      {
+        ...options,
+        headers: {
+          Accept: "application/json",
+          ...(options.body
+            ? { "Content-Type": "application/json" }
+            : {}),
+          ...options.headers,
+        },
+        signal: controller.signal,
+      }
+    );
 
-    // Lê como texto primeiro para não quebrar em respostas vazias
-    // ou quando o servidor retorna uma página HTML de erro.
     const raw = await response.text();
     let data = null;
 
@@ -56,14 +162,15 @@ async function apiRequest(endpoint, options = {}) {
     return data;
   } catch (error) {
     if (error.name === "AbortError") {
-      throw new Error("O servidor demorou para responder. Tente novamente.");
+      throw new Error(
+        "O servidor demorou para responder. Tente novamente."
+      );
     }
 
-    // Erros de rede no fetch geralmente chegam sem código HTTP.
     if (error instanceof TypeError) {
       throw new Error(
-        `Não foi possível acessar o TechCampus em ${BASE_URL}. ` +
-        "Confira se o servidor está ligado e se o endereço IP está correto."
+        `Não foi possível acessar o TechCampus em ${getBaseUrl()}. ` +
+        "Confira se o servidor está ligado e se o endereço está correto."
       );
     }
 
@@ -73,10 +180,7 @@ async function apiRequest(endpoint, options = {}) {
   }
 }
 
-/**
- * Verifica a rota real de saúde do backend.
- * No servidor TechCampus: GET /api/saude
- */
+// Verifica a conexão com o backend.
 export async function verificarConexao() {
   const response = await apiRequest("/api/saude");
 
@@ -86,5 +190,6 @@ export async function verificarConexao() {
   };
 }
 
-export { BASE_URL };
+export { getBaseUrl as BASE_URL };
+
 export default apiRequest;
