@@ -15,22 +15,20 @@ import Header from "../components/Header";
 import PrimaryButton from "../components/PrimaryButton";
 import FadeIn from "../components/FadeIn";
 import useConnection from "../hooks/useConnection";
+import { getBaseUrl } from "../services/api";
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const [token, setToken] = useState("");
   const [aviso, setAviso] = useState("");
 
-  // Estado REAL da comunicação com o backend (GET /api/saude).
-  const { connected, checking } = useConnection();
+  const { connected, checking, message, checkConnection } = useConnection();
 
   function handleChangeToken(value) {
     setToken(value);
     if (aviso) setAviso("");
   }
 
-  // Lógica original preservada: exige exatamente 6 números e segue para
-  // /validar-token, onde a validação acontece no backend.
   function handleValidateToken() {
     const tokenLimpo = token.trim();
 
@@ -52,7 +50,6 @@ export default function HomeScreen() {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      {/* Brilho vermelho decorativo, bem discreto. */}
       <View style={styles.glow} pointerEvents="none" />
 
       <ScrollView
@@ -106,13 +103,33 @@ export default function HomeScreen() {
           </View>
         </FadeIn>
 
-        <FadeIn delay={360} style={styles.securityContainer}>
+        <FadeIn delay={320} style={styles.connectionCard}>
+          <Text style={styles.connectionTitle}>CONEXÃO COM O SERVIDOR</Text>
+          <Text
+            style={[
+              styles.connectionMessage,
+              { color: checking ? colors.warning : connected ? colors.success : colors.error },
+            ]}
+          >
+            {checking ? "Verificando servidor..." : message}
+          </Text>
+          <Text style={styles.connectionUrl}>{getBaseUrl()}</Text>
+          <PrimaryButton
+            title={checking ? "VERIFICANDO..." : "TESTAR CONEXÃO"}
+            icon="↻"
+            variant="outline"
+            onPress={checkConnection}
+            disabled={checking}
+          />
+        </FadeIn>
+
+        <FadeIn delay={400} style={styles.securityContainer}>
           <View style={styles.securityRow}>
             <View style={styles.lockBadge}>
               <Text style={styles.lockText}>🔒</Text>
             </View>
             <Text style={styles.securityText}>
-              Validação segura pelo sistema TechCaampus.
+              Validação segura pelo sistema TechCampus.
             </Text>
           </View>
 
@@ -220,6 +237,29 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "bold",
     textAlign: "center",
+  },
+  connectionCard: {
+    marginTop: 18,
+    padding: 16,
+    borderRadius: 18,
+    backgroundColor: colors.backgroundSecondary,
+    borderWidth: 1,
+    borderColor: colors.border,
+    gap: 10,
+  },
+  connectionTitle: {
+    color: colors.textSecondary,
+    fontSize: 11,
+    fontWeight: "bold",
+    letterSpacing: 1.5,
+  },
+  connectionMessage: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  connectionUrl: {
+    color: colors.textMuted,
+    fontSize: 11,
   },
   securityContainer: {
     marginTop: 26,
